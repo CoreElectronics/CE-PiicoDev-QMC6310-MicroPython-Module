@@ -4,7 +4,7 @@ _C=False
 _B='y'
 _A='x'
 import math
-from PiicoDev_Unified import *
+from PiicoDev_Unified import*
 compat_str='\nUnified PiicoDev library out of date.  Get the latest module: https://piico.dev/unified \n'
 _I2C_ADDRESS=28
 _ADDRESS_XOUT=1
@@ -27,7 +27,7 @@ def _writeBit(x,n,b):
 	else:return _setBit(x,n)
 def _writeCrumb(x,n,c):x=_writeBit(x,n,_readBit(c,0));return _writeBit(x,n+1,_readBit(c,1))
 class PiicoDev_QMC6310:
-	range_gauss={3000:0.001,1200:0.0004,800:0.00026666667,200:6.6666667e-05};range_microtesla={3000:0.1,1200:0.04,800:0.026666667,200:0.0066666667}
+	range_gauss={3000:.001,1200:.0004,800:.00026666667,200:6.6666667e-05};range_microtesla={3000:.1,1200:.04,800:.026666667,200:.0066666667}
 	def __init__(self,bus=_D,freq=_D,sda=_D,scl=_D,addr=_I2C_ADDRESS,odr=3,osr1=0,osr2=3,range=3000,sign_x=0,sign_y=1,sign_z=1,calibrationFile='calibration.cal',suppress_warnings=_C):
 		try:
 			if compat_ind>=1:0
@@ -46,8 +46,8 @@ class PiicoDev_QMC6310:
 	def setRange(self,range):assert range in[3000,1200,800,200],'range must be 200,800,1200,3000 (uTesla)';r={3000:0,1200:1,800:2,200:3};self.sensitivity=self.range_microtesla[range];self._CR2=_writeCrumb(self._CR2,_BIT_RANGE,r[range]);self.i2c.writeto_mem(self.addr,_ADDRESS_CONTROL2,bytes([self._CR2]))
 	def _setSign(self,sign):self.i2c.writeto_mem(self.addr,_ADDRESS_SIGN,bytes([sign]))
 	def _convertAngleToPositive(self,angle):
-		if angle>=360.0:angle=angle-360.0
-		if angle<0:angle=angle+360.0
+		if angle>=36e1:angle=angle-36e1
+		if angle<0:angle=angle+36e1
 		return angle
 	def _getControlRegisters(self):return self.i2c.readfrom_mem(self.addr,_ADDRESS_CONTROL1,2)
 	def _getStatusReady(self,status):return _readBit(status,0)
@@ -70,14 +70,14 @@ class PiicoDev_QMC6310:
 			self.sample={_A:x,_B:y,'z':z};self._dataValid=_E;return self.sample
 		else:print('Not Ready');self.sample=NaN;return self.sample
 	def dataValid(self):return self._dataValid
-	def readPolar(self):cartesian=self.read();angle=math.atan2(cartesian[_A],-cartesian[_B])/math.pi*180.0+self.declination;angle=self._convertAngleToPositive(angle);magnitude=math.sqrt(cartesian[_A]*cartesian[_A]+cartesian[_B]*cartesian[_B]+cartesian['z']*cartesian['z']);return{'polar':angle,'Gauss':magnitude*100,'uT':magnitude}
+	def readPolar(self):cartesian=self.read();angle=math.atan2(cartesian[_A],-cartesian[_B])/math.pi*18e1+self.declination;angle=self._convertAngleToPositive(angle);magnitude=math.sqrt(cartesian[_A]*cartesian[_A]+cartesian[_B]*cartesian[_B]+cartesian['z']*cartesian['z']);return{'polar':angle,'Gauss':magnitude*100,'uT':magnitude}
 	def readMagnitude(self):return self.readPolar()['uT']
 	def readHeading(self):return self.readPolar()['polar']
 	def setDeclination(self,dec):self.declination=dec
 	def calibrate(self,enable_logging=_C):
 		try:self.setOutputDataRate(3)
 		except Exception as e:print(i2c_err_str.format(self.addr));raise e
-		x_min=65535;x_max=-65535;y_min=65535;y_max=-65535;z_min=65535;z_max=-65535;log='';print('*** Calibrating.\n    Slowly rotate your sensor until the bar is full');print('[          ]',end='');range=1000;i=0;x=0;y=0;z=0;a=0.5
+		self.x_offset=0;self.y_offset=0;self.z_offset=0;x_min=65535;x_max=-65535;y_min=65535;y_max=-65535;z_min=65535;z_max=-65535;log='';print('*** Calibrating.\n    Slowly rotate your sensor until the bar is full');print('[          ]',end='');range=1000;i=0;x=0;y=0;z=0;a=.5
 		while i<range:
 			i+=1;sleep_ms(5);d=self.read(raw=_E);x=a*d[_A]+(1-a)*x;y=a*d[_B]+(1-a)*y;z=a*d['z']+(1-a)*z
 			if x<x_min:x_min=x;i=0
