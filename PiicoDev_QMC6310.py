@@ -191,6 +191,9 @@ class PiicoDev_QMC6310(object):
         except Exception as e:
             print(i2c_err_str.format(self.addr))
             raise e
+        self.x_offset = 0
+        self.y_offset = 0
+        self.z_offset = 0
         x_min = 65535
         x_max = -65535
         y_min = 65535
